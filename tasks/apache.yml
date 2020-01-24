@@ -7,5 +7,28 @@
     group: root
     mode: 0644
 
-- name: WordPress | Apache | Enable site
-  command: "sudo a2ensite {{ wp_sitename }}.conf"
+# - name: WordPress | Apache | Enable rewrite
+#   apache2_module:
+#     state: present
+#     name: rewrite
+#   notify: restart apache2
+
+- name: Enable Apache mods.
+  file:
+    src: "/etc/apache2/mods-available/rewrite.load"
+    dest: "/etc/apache2/mods-enabled/rewrite.load"
+    state: link
+  notify: restart apache2
+
+- name: Remove default apache2 site.
+  file:
+    path: /etc/apache2/sites-enabled/000-default.conf
+    state: absent
+  notify: restart apache2
+
+- name: Activate custom Backuppc apache site.
+  file:
+    path: "/etc/apache2/sites-enabled/{{ wp_sitename }}.conf"
+    src: "/etc/apache2/sites-available/{{ wp_sitename }}.conf"
+    state: link
+  notify: restart apache2

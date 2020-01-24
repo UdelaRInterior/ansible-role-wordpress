@@ -11,12 +11,17 @@
 		Order allow,deny
 		allow from all
 		Require all granted
-		#RewriteEngine On
-		#RewriteBase /
-		#RewriteRule ^index\.php$ - [L]
-		#RewriteCond %{REQUEST_FILENAME} !-f
-		#RewriteCond %{REQUEST_FILENAME} !-d
-		#RewriteRule . /index.php [L]
+{% if wp_multisite %} 
+		RewriteEngine On
+		RewriteBase /
+		RewriteRule ^index\.php$ - [L]
+		RewriteCond %{REQUEST_FILENAME} !-f [OR]
+		RewriteCond %{REQUEST_FILENAME} !-d
+		RewriteRule . /index.php [L]
+        RewriteRule ^([_0-9a-zA-Z-]+/)?wp-admin$ $1wp-admin/ [R=301,L]
+        RewriteRule ^([_0-9a-zA-Z-]+/)?(wp-(content|admin|includes).*) $2 [L]
+        RewriteRule ^([_0-9a-zA-Z-]+/)?(.*\.php)$ $2 [L]
+{% endif %}
 	</Directory>
 
 	ErrorLog /var/log/apache2/{{wp_sitename}}-error.log

@@ -2,7 +2,7 @@
 - name: Wordpress | Install php
   apt:
     pkg: ['php-pear', 'php-fpm', 'php-dev', 'php-zip', 'php-curl',
-          'php-xmlrpc', 'php-gd', 'php-mysql', 'php-mbstring', 'php-xml']
+          'php-xmlrpc', 'php-gd', 'php-mysql', 'php-mbstring', 'php-xml', 'unzip']
     update_cache: yes
     cache_valid_time: 86400
     state: present
@@ -39,7 +39,7 @@
 
 - name: Wordpress | Extract archive in {{ wp_install_dir }}
   unarchive:
-    src: "http://wordpress.org/wordpress-{{ wp_version }}.tar.gz"
+    src: "{{ wp_url_download }}-{{ wp_version }}.tar.gz"
     dest: "{{ wp_install_dir }}"
     remote_src: yes
 
@@ -114,13 +114,32 @@
   notify:
     - restart {{ wp_webserver }}
 
-- name: Create mysql database
-  mysql_db:
-    name: "{{ wp_mysql_db }}"
-    state: present
+- name: Add credential root
+  template:
+    src: .my.cnf.j2
+    dest: /root/.my.cnf
 
 - name: Create mysql user
   mysql_user:
-    name: "{{ wp_mysql_user }}"
-    password: "{{ wp_mysql_password }}"
+    name: "{{ wp_db_user }}"
+    password: "{{ wp_db_password }}"
     priv: '*.*:ALL'
+    state: present
+
+- name: Create mysql database
+  mysql_db:
+    login_user: "{{ wp_db_user }}"
+    login_password: "{{ wp_db_password }}"
+    name: "{{ wp_db_name }}"
+    state: present
+
+- name: copy dump.sql
+  template:
+    src: dump.sql.j2
+    dest: /home/deploy/dump.sql
+
+- name: Restore database
+  mysql_db:
+    name: "{{ wp_db_name }}"
+    state: import
+    target: /home/deploy/dump.sql
